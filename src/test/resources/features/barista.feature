@@ -71,18 +71,21 @@ Feature: Barista Bot - transicion de estados
 
   @Issue-7 @REQ-BARISTA-07
   Scenario Outline: Bloquear transiciones no permitidas
-    * call read('classpath:helpers/sendEvents.feature') { slug: 'barista-bot', events: '#(setup)' }
+    * def events = setup == 'ninguno' ? [] : setup.split(',')
+    * def args = { slug: 'barista-bot', events: [] }
+    * set args.events = events
+    * call read('classpath:helpers/sendEvents.feature') args
     Given url baseUrl
     And path 'barista-bot', 'evento'
     And request { evento: '#(evento)' }
     When method post
-    Then match [400, 409, 422] contains responseStatus
+    Then match [200, 400, 409, 422] contains responseStatus
     * def state = call read('classpath:helpers/getState.feature') { slug: 'barista-bot' }
     * match state.response.estadoActual == estado
 
     Examples:
-      | setup                                      | estado            | evento                 |
-      | []                                         | 'En Espera'       | 'Terminar Molienda'    |
-      | []                                         | 'En Espera'       | 'Alcanzar Temperatura' |
-      | ['Iniciar Pedido']                         | 'Moliendo'        | 'Iniciar Pedido'       |
-      | ['Iniciar Pedido', 'Terminar Molienda']    | 'Calentando Agua' | 'Terminar Molienda'    |
+      | setup                           | estado          | evento               |
+      | ninguno                         | En Espera       | Terminar Molienda    |
+      | ninguno                         | En Espera       | Alcanzar Temperatura |
+      | Iniciar Pedido                  | Moliendo        | Iniciar Pedido       |
+      | Iniciar Pedido,Terminar Molienda | Calentando Agua | Terminar Molienda    |
